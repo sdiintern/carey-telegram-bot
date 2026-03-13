@@ -1,9 +1,11 @@
 const fetch = require('node-fetch');
+const { google } = require('googleapis');
 
 const CREATE_CHAT_URL = "https://carelytics.sdnim.com/api/flows/trigger/0dc3a82d-1e76-408e-b4f9-cced0f5d9fc2";
 const SEND_MESSAGE_URL = "https://carelytics.sdnim.com/api/flows/trigger/e33fcc9c-555e-4b1b-af74-ef6f229f46e4";
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const AI_MODEL = "azure~openai.gpt-4o-mini";
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
 const userSessions = {};
 
@@ -21,6 +23,39 @@ async function sendTypingAction(chatId) {
 
 // Add your list of allowed IDs here (numbers, no quotes)
 const ALLOWED_USERS = [851642385, 852635840, 929848056, 339501250, 77107711, 20101904];
+
+// Helper to log to Google Sheets
+async function logToSheet(chatId, userId, userMsg, aiMsg) {
+    try {
+        const auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: process.env.GOOGLE_CLIENT_EMAIL,
+                // The replace here is CRUCIAL for Vercel to read the key correctly
+                private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+            },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+        });
+
+        const sheets = google.sheets({ version: 'v4', auth });
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'Sheet1!A:E', // Make sure your tab is named Sheet1
+            valueInputOption: 'USER_ENTERED',
+            resource: {
+                values: [[
+                    chatId.toString(), 
+                    userId.toString(), 
+                    userMsg, 
+                    aiMsg, 
+                    new Date().toLocaleString("en-SG") // Timestamp
+                ]],
+            },
+        });
+        console.log("✅ Logged to Google Sheets");
+    } catch (error) {
+        console.error("❌ Google Sheets Error:", error);
+    }
+}
 
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(200).send('OK');
@@ -72,6 +107,9 @@ module.exports = async function handler(req, res) {
                 text: aiResponse,
             }),
         });
+
+        // 3. Log to Sheet (Run this in background)
+        logToSheet(chatId, userId, userText, aiResponse);
 
         res.status(200).send('OK');
     } catch (error) {
