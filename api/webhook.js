@@ -20,7 +20,7 @@ async function sendTypingAction(chatId) {
 }
 
 // Add your list of allowed IDs here (numbers, no quotes)
-const ALLOWED_USERS = [851642385, 852635840, 929848056, 339501250, 77107711];
+const ALLOWED_USERS = [851642385, 852635840, 929848056, 339501250, 77107711, 20101904];
 
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(200).send('OK');
