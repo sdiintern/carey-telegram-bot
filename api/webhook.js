@@ -19,6 +19,9 @@ async function sendTypingAction(chatId) {
     });
 }
 
+// Add your list of allowed IDs here (numbers, no quotes)
+const ALLOWED_USERS = [851642385];
+
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') return res.status(200).send('OK');
 
@@ -27,6 +30,24 @@ module.exports = async function handler(req, res) {
     
     const chatId = message.chat.id;
     const userText = message.text;
+    const userId = message.from.id;
+
+    // 🛑 RESTRICTION CHECK
+    if (!ALLOWED_USERS.includes(userId)) {
+        console.log(`🚫 Unauthorized access attempt by ID: ${userId}`);
+        
+        // Optional: Send a polite "No access" message
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: "Sorry, you are not authorized to use this bot. Please contact the admin.",
+            }),
+        });
+        
+        return res.status(200).send('Unauthorized');
+    }
 
     try {
         // 1. Immediately show "typing..." in Telegram
