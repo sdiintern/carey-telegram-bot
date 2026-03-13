@@ -47,7 +47,7 @@ async function logToSheet(chatId, userId, userMsg, aiMsg) {
                     userId.toString(), 
                     userMsg, 
                     aiMsg, 
-                    new Date().toLocaleString("en-SG") // Timestamp
+                    new Date().toLocaleString("en-SG", { timeZone: "Asia/Singapore" })
                 ]],
             },
         });
