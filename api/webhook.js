@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     const { message } = req.body;
     if (!message || !message.text) return res.status(200).send('OK');
-
+   
     const chatId = message.chat.id;
     const userText = message.text;
 
