@@ -22,7 +22,7 @@ async function sendTypingAction(chatId) {
 }
 
 // Add your list of allowed IDs here (numbers, no quotes)
-const ALLOWED_USERS = [851642385, 852635840, 929848056, 339501250, 77107711, 20101904, 332431087, 25290327];
+const ALLOWED_USERS = [851642385, 852635840, 929848056, 339501250, 77107711, 20101904, 332431087, 25290327, 45630449];
 
 // Helper to log to Google Sheets
 async function logToSheet(chatId, userId, userMsg, aiMsg) {
