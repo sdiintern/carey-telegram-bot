@@ -6,6 +6,7 @@ const SEND_MESSAGE_URL = "https://carelytics.sdnim.com/api/flows/trigger/e33fcc9
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const AI_MODEL = "azure~anthropic.claude-4-5-sonnet";
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+const TAGGING_CHAT_ID = "fa7f5f6bc393460c920c30c54056702c";
 
 const userSessions = {};
 
@@ -25,7 +26,7 @@ async function sendTypingAction(chatId) {
 const ALLOWED_USERS = [851642385, 852635840, 929848056, 339501250, 77107711, 20101904, 332431087, 25290327, 45630449, 196888109];
 
 // Helper to log to Google Sheets
-async function logToSheet(chatId, userId, userMsg, aiMsg) {
+async function logToSheet(chatId, userId, userMsg, aiMsg, riskLevel) {
     try {
         const auth = new google.auth.GoogleAuth({
             credentials: {
@@ -39,14 +40,15 @@ async function logToSheet(chatId, userId, userMsg, aiMsg) {
         const sheets = google.sheets({ version: 'v4', auth });
         await sheets.spreadsheets.values.append({
             spreadsheetId: SPREADSHEET_ID,
-            range: 'Raw_data!A:E', // Make sure your tab is named Sheet1
+            range: 'Raw_data!A:F', // Make sure your tab is named Sheet1
             valueInputOption: 'USER_ENTERED',
             resource: {
                 values: [[
                     chatId.toString(), 
                     userId.toString(), 
                     userMsg, 
-                    aiMsg, 
+                    aiMsg,
+                    riskLevel || "N/A",
                     new Date().toLocaleString("en-SG", { timeZone: "Asia/Singapore" })
                 ]],
             },
@@ -94,9 +96,17 @@ module.exports = async function handler(req, res) {
             aiChatId = await createAIChat();
             userSessions[chatId] = aiChatId;
         }
+        
+        console.log('📡 Calling Response AI and Tagging AI in parallel...');
 
         // 3. Send message to AI (this part takes time)
-        const aiResponse = await sendMessageToAI(aiChatId, userText);
+
+        const [aiResponse, riskLevel] = await Promise.all([
+            sendMessageToAI(aiChatId, userText),
+            sendMessageToAI(TAGGING_CHAT_ID, userText)
+        ]);
+
+        console.log(`🧠 Risk Assessment: ${riskLevel}`);
 
         // 4. Send the actual text response
         await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
@@ -109,7 +119,7 @@ module.exports = async function handler(req, res) {
         });
 
         // 3. Log to Sheet (Run this in background)
-        logToSheet(chatId, userId, userText, aiResponse);
+        logToSheet(chatId, userId, userText, aiResponse, riskLevel);
 
         res.status(200).send('OK');
     } catch (error) {
