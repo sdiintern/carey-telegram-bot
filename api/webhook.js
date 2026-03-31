@@ -4,7 +4,7 @@ const { google } = require('googleapis');
 const CREATE_CHAT_URL = "https://carelytics.sdnim.com/api/flows/trigger/0dc3a82d-1e76-408e-b4f9-cced0f5d9fc2";
 const SEND_MESSAGE_URL = "https://carelytics.sdnim.com/api/flows/trigger/e33fcc9c-555e-4b1b-af74-ef6f229f46e4";
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
-const AI_MODEL = "azure~anthropic.claude-4-5-sonnet";
+const AI_MODEL = "azure~google.gemini-3-flash-preview";
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const TAGGING_CHAT_ID = "fa7f5f6bc393460c920c30c54056702c";
 
